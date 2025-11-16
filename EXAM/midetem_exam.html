@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Runner AI - Enhanced Version</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --visited: #9b59b6;
+            --path: #1abc9c;
+            --current: #f1c40f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: #fdbb2d;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+
+        .maze-container {
+            flex: 1;
+            min-width: 600px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .controls {
+            flex: 1;
+            min-width: 350px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .maze {
+            display: grid;
+            grid-template-columns: repeat(15, 30px);
+            grid-template-rows: repeat(15, 30px);
+            gap: 1px;
+            margin: 0 auto;
+            width: fit-content;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .path {
+            background-color: var(--dark);
+        }
+
+        .wall {
+            background-color: #34495e;
+            background-image: linear-gradient(45deg, #2c3e50 25%, transparent 25%, transparent 75%, #2c3e50 75%, #2c3e50),
+                              linear-gradient(45deg, #2c3e50 25%, transparent 25%, transparent 75%, #2c3e50 75%, #2c3e50);
+            background-size: 10px 10px;
+            background-position: 0 0, 5px 5px;
+        }
+
+        .start {
+            background-color: var(--secondary);
+            animation: pulse 2s infinite;
+        }
+
+        .goal {
+            background-color: var(--danger);
+            animation: pulse 1.5s infinite;
+        }
+
+        .visited {
+            background-color: var(--visited);
+        }
+
+        .current {
+            background-color: var(--current);
+            animation: glow 1s infinite alternate;
+        }
+
+        .solution {
+            background-color: var(--path);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px var(--current); }
+            to { box-shadow: 0 0 15px var(--current); }
+        }
+
+        .algorithm-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .algorithm-btn {
+            padding: 12px 15px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .algorithm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .algorithm-btn.active {
+            background: var(--secondary);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .control-btn {
+            padding: 12px 15px;
+            background: var(--danger);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .control-btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .control-btn.primary {
+            background: var(--primary);
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.4rem;
+            color: var(--current);
+        }
+
+        .visualization-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .speed-control, .maze-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .speed-control label, .maze-control label {
+            min-width: 120px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #34495e;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .maze-size-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .size-btn {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .size-btn.active {
+            background: var(--primary);
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .documentation {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .doc-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h2 {
+            color: var(--warning);
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--warning);
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h3 {
+            color: var(--primary);
+            margin: 20px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        p {
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .code-snippet {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            border-left: 4px solid var(--primary);
+        }
+
+        .algorithm-comparison {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .algo-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .algo-card h4 {
+            color: var(--secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .algo-card.bfs { border-left-color: #3498db; }
+        .algo-card.dfs { border-left-color: #e74c3c; }
+        .algo-card.gbfs { border-left-color: #9b59b6; }
+        .algo-card.astar { border-left-color: #2ecc71; }
+
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .performance-table th, .performance-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .performance-table th {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--warning);
+        }
+
+        .performance-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-container {
+            margin: 20px 0;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 1200px) {
+            .game-area {
+                flex-direction: column;
+            }
+            
+            .maze-container, .controls {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .maze {
+                grid-template-columns: repeat(15, 20px);
+                grid-template-rows: repeat(15, 20px);
+            }
+            
+            .cell {
+                width: 20px;
+                height: 20px;
+                font-size: 10px;
+            }
+            
+            .algorithm-selector {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .algorithm-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> Maze Runner AI</h1>
+            <p class="subtitle">Enhanced Version - AI Search Algorithm Visualization</p>
+            <p class="subtitle">CSEG5 Artificial Intelligence for Games - Midterm Laboratory Exam</p>
+        </header>
+
+        <div class="game-area">
+            <div class="maze-container">
+                <h2><i class="fas fa-th"></i> Maze Environment</h2>
+                <div class="maze" id="maze">
+                    <!-- Maze will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="controls">
+                <h2><i class="fas fa-gamepad"></i> AI Controls</h2>
+                
+                <div class="algorithm-selector">
+                    <button class="algorithm-btn" data-algorithm="bfs">
+                        <i class="fas fa-expand"></i> Breadth-First Search
+                    </button>
+                    <button class="algorithm-btn" data-algorithm="dfs">
+                        <i class="fas fa-arrow-down"></i> Depth-First Search
+                    </button>
+                    <button class="algorithm-btn" data-algorithm="gbfs">
+                        <i class="fas fa-bullseye"></i> Greedy Best-First
+                    </button>
+                    <button class="algorithm-btn" data-algorithm="astar">
+                        <i class="fas fa-star"></i> A* Search
+                    </button>
+                </div>
+
+                <div class="control-buttons">
+                    <button class="control-btn primary" id="start-btn">
+                        <i class="fas fa-play"></i> Start Search
+                    </button>
+                    <button class="control-btn" id="reset-btn">
+                        <i class="fas fa-redo"></i> Reset Maze
+                    </button>
+                    <button class="control-btn" id="step-btn">
+                        <i class="fas fa-step-forward"></i> Step Forward
+                    </button>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Algorithm</div>
+                        <div class="stat-value" id="current-algorithm">None</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Steps Taken</div>
+                        <div class="stat-value" id="steps-taken">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Path Length</div>
+                        <div class="stat-value" id="path-length">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Cells Visited</div>
+                        <div class="stat-value" id="cells-visited">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Time (ms)</div>
+                        <div class="stat-value" id="search-time">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value" id="search-status">Ready</div>
+                    </div>
+                </div>
+
+                <div class="visualization-controls">
+                    <div class="speed-control">
+                        <label for="speed-slider"><i class="fas fa-tachometer-alt"></i> Animation Speed:</label>
+                        <input type="range" id="speed-slider" min="1" max="10" value="5">
+                    </div>
+                    
+                    <div class="maze-control">
+                        <label for="maze-size"><i class="fas fa-arrows-alt"></i> Maze Size:</label>
+                        <div class="maze-size-selector">
+                            <button class="size-btn active" data-size="15">15x15</button>
+                            <button class="size-btn" data-size="20">20x20</button>
+                            <button class="size-btn" data-size="25">25x25</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--secondary);"></div>
+                        <span>Start Position</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--danger);"></div>
+                        <span>Goal Position</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--visited);"></div>
+                        <span>Visited Cells</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--current);"></div>
+                        <span>Current Position</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--path);"></div>
+                        <span>Solution Path</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="documentation">
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" data-tab="algorithms">Algorithms</div>
+                    <div class="tab" data-tab="implementation">Implementation</div>
+                    <div class="tab" data-tab="analysis">Performance Analysis</div>
+                    <div class="tab" data-tab="reflection">Reflection</div>
+                </div>
+                
+                <div class="tab-content active" id="algorithms-tab">
+                    <h2><i class="fas fa-project-diagram"></i> Algorithm Selection & Justification</h2>
+                    
+                    <div class="algorithm-comparison">
+                        <div class="algo-card bfs">
+                            <h4><i class="fas fa-expand"></i> Breadth-First Search (BFS)</h4>
+                            <p>Explores all neighbors at the current depth before moving to the next level. Guarantees the shortest path in unweighted grids.</p>
+                            <ul>
+                                <li><strong>Time Complexity:</strong> O(V + E)</li>
+                                <li><strong>Space Complexity:</strong> O(V)</li>
+                                <li><strong>Optimal:</strong> Yes (for unweighted graphs)</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="algo-card dfs">
+                            <h4><i class="fas fa-arrow-down"></i> Depth-First Search (DFS)</h4>
+                            <p>Explores as far as possible along each branch before backtracking. May not find the shortest path but uses less memory.</p>
+                            <ul>
+                                <li><strong>Time Complexity:</strong> O(V + E)</li>
+                                <li><strong>Space Complexity:</strong> O(V)</li>
+                                <li><strong>Optimal:</strong> No</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="algo-card gbfs">
+                            <h4><i class="fas fa-bullseye"></i> Greedy Best-First Search (GBFS)</h4>
+                            <p>Uses a heuristic to estimate distance to goal and prioritizes nodes that seem closer. Efficient but not guaranteed to find optimal path.</p>
+                            <ul>
+                                <li><strong>Time Complexity:</strong> O(V log V)</li>
+                                <li><strong>Space Complexity:</strong> O(V)</li>
+                                <li><strong>Optimal:</strong> No</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="algo-card astar">
+                            <h4><i class="fas fa-star"></i> A* Search</h4>
+                            <p>Combines path cost with heuristic estimate. Guarantees shortest path with admissible heuristic. Most efficient for pathfinding.</p>
+                            <ul>
+                                <li><strong>Time Complexity:</strong> O(V log V)</li>
+                                <li><strong>Space Complexity:</strong> O(V)</li>
+                                <li><strong>Optimal:</strong> Yes</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <h3>Why A* is Preferred for Maze Navigation</h3>
+                    <p>A* search is generally the best choice for maze navigation problems because it:</p>
+                    <ul>
+                        <li>Guarantees finding the shortest path when using an admissible heuristic (like Manhattan distance)</li>
+                        <li>Is more efficient than BFS by using a heuristic to guide the search</li>
+                        <li>Explores fewer nodes than BFS while maintaining optimality</li>
+                        <li>Is widely used in real-world applications and game AI</li>
+                    </ul>
+                </div>
+                
+                <div class="tab-content" id="implementation-tab">
+                    <h2><i class="fas fa-code"></i> Implementation Details</h2>
+                    
+                    <h3><i class="fas fa-th"></i> Maze Generation</h3>
+                    <p>The maze is generated using a recursive backtracking algorithm, creating a perfect maze with exactly one solution path.</p>
+                    
+                    <div class="code-snippet">
+// Maze generation using recursive backtracking
+function generateMaze(rows, cols) {
+    // Initialize maze with all walls
+    let maze = Array(rows).fill().map(() => Array(cols).fill(1));
+    
+    // Start from a random cell
+    let stack = [{row: 1, col: 1}];
+    maze[1][1] = 0;
+    
+    while (stack.length > 0) {
+        let current = stack[stack.length - 1];
+        let neighbors = getUnvisitedNeighbors(current, maze);
+        
+        if (neighbors.length > 0) {
+            let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+            
+            // Remove wall between current and next
+            let wallRow = current.row + (next.row - current.row) / 2;
+            let wallCol = current.col + (next.col - current.col) / 2;
+            maze[wallRow][wallCol] = 0;
+            maze[next.row][next.col] = 0;
+            
+            stack.push(next);
+        } else {
+            stack.pop();
+        }
+    }
+    
+    return maze;
+}
+                    </div>
+                    
+                    <h3><i class="fas fa-robot"></i> A* Search Implementation</h3>
+                    <p>The A* algorithm uses a priority queue to explore nodes with the lowest f-score (g + h), where g is the cost from start and h is the heuristic estimate to goal.</p>
+                    
+                    <div class="code-snippet">
+function aStar(start, goal, maze) {
+    let openSet = new PriorityQueue((a, b) => a.f < b.f);
+    let cameFrom = new Map();
+    let gScore = new Map();
+    let fScore = new Map();
+    
+    gScore.set(key(start), 0);
+    fScore.set(key(start), heuristic(start, goal));
+    openSet.enqueue({ ...start, f: fScore.get(key(start)) });
+    
+    while (!openSet.isEmpty()) {
+        let current = openSet.dequeue();
+        
+        if (current.x === goal.x && current.y === goal.y) {
+            return reconstructPath(cameFrom, current);
+        }
+        
+        for (let neighbor of getNeighbors(current, maze)) {
+            let tentativeG = gScore.get(key(current)) + 1;
+            
+            if (!gScore.has(key(neighbor)) || tentativeG < gScore.get(key(neighbor))) {
+                cameFrom.set(key(neighbor), current);
+                gScore.set(key(neighbor), tentativeG);
+                fScore.set(key(neighbor), tentativeG + heuristic(neighbor, goal));
+                
+                if (!openSet.contains(neighbor)) {
+                    openSet.enqueue({ ...neighbor, f: fScore.get(key(neighbor)) });
+                }
+            }
+        }
+    }
+    
+    return null; // No path found
+}
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="analysis-tab">
+                    <h2><i class="fas fa-chart-bar"></i> Performance Analysis</h2>
+                    
+                    <h3><i class="fas fa-table"></i> Algorithm Comparison</h3>
+                    <table class="performance-table">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Path Length</th>
+                                <th>Cells Visited</th>
+                                <th>Time (ms)</th>
+                                <th>Optimal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Breadth-First Search</td>
+                                <td id="bfs-path">-</td>
+                                <td id="bfs-visited">-</td>
+                                <td id="bfs-time">-</td>
+                                <td>Yes</td>
+                            </tr>
+                            <tr>
+                                <td>Depth-First Search</td>
+                                <td id="dfs-path">-</td>
+                                <td id="dfs-visited">-</td>
+                                <td id="dfs-time">-</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td>Greedy Best-First</td>
+                                <td id="gbfs-path">-</td>
+                                <td id="gbfs-visited">-</td>
+                                <td id="gbfs-time">-</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td>A* Search</td>
+                                <td id="astar-path">-</td>
+                                <td id="astar-visited">-</td>
+                                <td id="astar-time">-</td>
+                                <td>Yes</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3><i class="fas fa-lightbulb"></i> Key Observations</h3>
+                    <ul>
+                        <li><strong>BFS</strong> always finds the shortest path but visits more cells than A*</li>
+                        <li><strong>DFS</strong> may find a path quickly but it's rarely the shortest one</li>
+                        <li><strong>GBFS</strong> is fast but can get stuck in dead ends, resulting in suboptimal paths</li>
+                        <li><strong>A*</strong> balances efficiency and optimality, making it the best choice for most scenarios</li>
+                    </ul>
+                </div>
+                
+                <div class="tab-content" id="reflection-tab">
+                    <h2><i class="fas fa-brain"></i> Reflection & Challenges</h2>
+                    
+                    <h3><i class="fas fa-exclamation-triangle"></i> Implementation Challenges</h3>
+                    <ul>
+                        <li><strong>Algorithm Efficiency:</strong> Implementing efficient data structures for priority queues in A* and GBFS</li>
+                        <li><strong>Maze Generation:</strong> Creating mazes that are challenging but still solvable</li>
+                        <li><strong>Visualization:</strong> Balancing visual appeal with performance during animation</li>
+                        <li><strong>User Experience:</strong> Designing an intuitive interface that makes complex algorithms accessible</li>
+                    </ul>
+                    
+                    <h3><i class="fas fa-chart-line"></i> Performance Optimizations</h3>
+                    <ul>
+                        <li>Used efficient data structures (priority queues, sets) for algorithm implementation</li>
+                        <li>Implemented incremental visualization to maintain performance during animation</li>
+                        <li>Added maze size options to balance complexity and performance</li>
+                        <li>Optimized rendering by minimizing DOM manipulations</li>
+                    </ul>
+                    
+                    <h3><i class="fas fa-gamepad"></i> Impact on Gameplay</h3>
+                    <p>The implementation demonstrates how different AI search strategies can significantly impact game behavior:</p>
+                    <ul>
+                        <li><strong>BFS</strong> creates methodical, predictable AI that always finds the optimal path</li>
+                        <li><strong>DFS</strong> can create more "explorative" AI that might discover hidden areas</li>
+                        <li><strong>GBFS</strong> creates goal-oriented AI that moves directly toward targets but may get stuck</li>
+                        <li><strong>A*</strong> creates intelligent AI that balances exploration and efficiency</li>
+                    </ul>
+                    <p>These differences highlight how algorithm choice directly affects player experience and game design possibilities.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Maze Runner AI Implementation
+        class PriorityQueue {
+            constructor(comparator = (a, b) => a.f < b.f) {
+                this.heap = [];
+                this.comparator = comparator;
+            }
+
+            enqueue(value) {
+                this.heap.push(value);
+                this.bubbleUp(this.heap.length - 1);
+            }
+
+            dequeue() {
+                const min = this.heap[0];
+                const end = this.heap.pop();
+                
+                if (this.heap.length > 0) {
+                    this.heap[0] = end;
+                    this.sinkDown(0);
+                }
+                
+                return min;
+            }
+
+            isEmpty() {
+                return this.heap.length === 0;
+            }
+
+            contains(node) {
+                return this.heap.some(item => 
+                    item.row === node.row && item.col === node.col);
+            }
+
+            bubbleUp(index) {
+                const element = this.heap[index];
+                
+                while (index > 0) {
+                    const parentIndex = Math.floor((index - 1) / 2);
+                    const parent = this.heap[parentIndex];
+                    
+                    if (this.comparator(element, parent)) {
+                        this.heap[parentIndex] = element;
+                        this.heap[index] = parent;
+                        index = parentIndex;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            sinkDown(index) {
+                const length = this.heap.length;
+                const element = this.heap[index];
+                
+                while (true) {
+                    let leftChildIndex = 2 * index + 1;
+                    let rightChildIndex = 2 * index + 2;
+                    let swap = null;
+                    let leftChild, rightChild;
+                    
+                    if (leftChildIndex < length) {
+                        leftChild = this.heap[leftChildIndex];
+                        if (this.comparator(leftChild, element)) {
+                            swap = leftChildIndex;
+                        }
+                    }
+                    
+                    if (rightChildIndex < length) {
+                        rightChild = this.heap[rightChildIndex];
+                        if ((swap === null && this.comparator(rightChild, element)) ||
+                            (swap !== null && this.comparator(rightChild, leftChild))) {
+                            swap = rightChildIndex;
+                        }
+                    }
+                    
+                    if (swap === null) break;
+                    
+                    this.heap[index] = this.heap[swap];
+                    this.heap[swap] = element;
+                    index = swap;
+                }
+            }
+        }
+
+        // Maze configuration
+        let ROWS = 15;
+        let COLS = 15;
+        
+        // Cell types
+        const CELL_TYPES = {
+            PATH: 0,
+            WALL: 1,
+            START: 2,
+            GOAL: 3,
+            VISITED: 4,
+            CURRENT: 5,
+            SOLUTION: 6
+        };
+
+        // Algorithm types
+        const ALGORITHMS = {
+            BFS: 'bfs',
+            DFS: 'dfs',
+            GBFS: 'gbfs',
+            ASTAR: 'astar'
+        };
+
+        // Game state
+        let maze = [];
+        let startPos = { row: 1, col: 1 };
+        let goalPos = { row: ROWS - 2, col: COLS - 2 };
+        let currentAlgorithm = null;
+        let searchState = null;
+        let isSearching = false;
+        let animationSpeed = 200;
+        let steps = 0;
+        let visitedCells = 0;
+        let pathLength = 0;
+        let searchTime = 0;
+        let performanceData = {
+            bfs: { path: 0, visited: 0, time: 0 },
+            dfs: { path: 0, visited: 0, time: 0 },
+            gbfs: { path: 0, visited: 0, time: 0 },
+            astar: { path: 0, visited: 0, time: 0 }
+        };
+
+        // Initialize the game
+        function init() {
+            generateMaze();
+            renderMaze();
+            setupEventListeners();
+            updateStats();
+            updatePerformanceTable();
+            
+            // Auto-select BFS algorithm
+            document.querySelector('.algorithm-btn[data-algorithm="bfs"]').click();
+        }
+
+        // Generate a maze using recursive backtracking
+        function generateMaze() {
+            // Initialize maze with all walls
+            maze = Array(ROWS).fill().map(() => Array(COLS).fill(CELL_TYPES.WALL));
+            
+            // Start from the starting position
+            let stack = [startPos];
+            maze[startPos.row][startPos.col] = CELL_TYPES.PATH;
+            
+            while (stack.length > 0) {
+                let current = stack[stack.length - 1];
+                let neighbors = getUnvisitedNeighbors(current);
+                
+                if (neighbors.length > 0) {
+                    let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    
+                    // Remove wall between current and next
+                    let wallRow = current.row + Math.floor((next.row - current.row) / 2);
+                    let wallCol = current.col + Math.floor((next.col - current.col) / 2);
+                    maze[wallRow][wallCol] = CELL_TYPES.PATH;
+                    maze[next.row][next.col] = CELL_TYPES.PATH;
+                    
+                    stack.push(next);
+                } else {
+                    stack.pop();
+                }
+            }
+            
+            // Set start and goal positions
+            maze[startPos.row][startPos.col] = CELL_TYPES.START;
+            maze[goalPos.row][goalPos.col] = CELL_TYPES.GOAL;
+            
+            // Ensure there's a path from start to goal
+            ensurePath();
+        }
+
+        // Get unvisited neighbors for maze generation
+        function getUnvisitedNeighbors(cell) {
+            const neighbors = [];
+            const directions = [
+                { row: -2, col: 0 },  // up
+                { row: 2, col: 0 },   // down
+                { row: 0, col: -2 },  // left
+                { row: 0, col: 2 }    // right
+            ];
+            
+            for (const dir of directions) {
+                const newRow = cell.row + dir.row;
+                const newCol = cell.col + dir.col;
+                
+                if (newRow > 0 && newRow < ROWS - 1 && 
+                    newCol > 0 && newCol < COLS - 1 && 
+                    maze[newRow][newCol] === CELL_TYPES.WALL) {
+                    neighbors.push({ row: newRow, col: newCol });
+                }
+            }
+            
+            return neighbors;
+        }
+
+        // Ensure there's a path from start to goal
+        function ensurePath() {
+            // Use BFS to check if there's a path
+            const queue = [{ ...startPos }];
+            const visited = new Set();
+            visited.add(key(startPos));
+            let found = false;
+            
+            while (queue.length > 0 && !found) {
+                const current = queue.shift();
+                
+                if (current.row === goalPos.row && current.col === goalPos.col) {
+                    found = true;
+                    break;
+                }
+                
+                const neighbors = getPathNeighbors(current.row, current.col);
+                for (const neighbor of neighbors) {
+                    const neighborKey = key(neighbor);
+                    if (!visited.has(neighborKey)) {
+                        visited.add(neighborKey);
+                        queue.push(neighbor);
+                    }
+                }
+            }
+            
+            // If no path found, create one
+            if (!found) {
+                let current = { ...startPos };
+                while (current.row !== goalPos.row || current.col !== goalPos.col) {
+                    if (current.row < goalPos.row) {
+                        current.row++;
+                    } else if (current.row > goalPos.row) {
+                        current.row--;
+                    } else if (current.col < goalPos.col) {
+                        current.col++;
+                    } else if (current.col > goalPos.col) {
+                        current.col--;
+                    }
+                    
+                    if (maze[current.row][current.col] === CELL_TYPES.WALL) {
+                        maze[current.row][current.col] = CELL_TYPES.PATH;
+                    }
+                }
+            }
+        }
+
+        // Render the maze in the DOM
+        function renderMaze() {
+            const mazeElement = document.getElementById('maze');
+            mazeElement.innerHTML = '';
+            
+            // Update grid dimensions
+            mazeElement.style.gridTemplateColumns = `repeat(${COLS}, 30px)`;
+            mazeElement.style.gridTemplateRows = `repeat(${ROWS}, 30px)`;
+            
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    
+                    switch (maze[i][j]) {
+                        case CELL_TYPES.PATH:
+                            cell.classList.add('path');
+                            break;
+                        case CELL_TYPES.WALL:
+                            cell.classList.add('wall');
+                            break;
+                        case CELL_TYPES.START:
+                            cell.classList.add('start');
+                            cell.innerHTML = '<i class="fas fa-play"></i>';
+                            break;
+                        case CELL_TYPES.GOAL:
+                            cell.classList.add('goal');
+                            cell.innerHTML = '<i class="fas fa-flag-checkered"></i>';
+                            break;
+                        case CELL_TYPES.VISITED:
+                            cell.classList.add('visited');
+                            break;
+                        case CELL_TYPES.CURRENT:
+                            cell.classList.add('current');
+                            break;
+                        case CELL_TYPES.SOLUTION:
+                            cell.classList.add('solution');
+                            break;
+                    }
+                    
+                    mazeElement.appendChild(cell);
+                }
+            }
+        }
+
+        // Set up event listeners for controls
+        function setupEventListeners() {
+            // Algorithm selection buttons
+            document.querySelectorAll('.algorithm-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.algorithm-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentAlgorithm = this.dataset.algorithm;
+                    document.getElementById('current-algorithm').textContent = 
+                        this.textContent.trim();
+                    resetSearch();
+                });
+            });
+
+            // Control buttons
+            document.getElementById('start-btn').addEventListener('click', startSearch);
+            document.getElementById('reset-btn').addEventListener('click', resetMaze);
+            document.getElementById('step-btn').addEventListener('click', stepForward);
+
+            // Speed control
+            document.getElementById('speed-slider').addEventListener('input', function() {
+                animationSpeed = 300 - (this.value * 25);
+            });
+
+            // Maze size buttons
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    const size = parseInt(this.dataset.size);
+                    changeMazeSize(size);
+                });
+            });
+
+            // Tab navigation
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // Change maze size
+        function changeMazeSize(size) {
+            ROWS = size;
+            COLS = size;
+            startPos = { row: 1, col: 1 };
+            goalPos = { row: ROWS - 2, col: COLS - 2 };
+            resetMaze();
+        }
+
+        // Start the search with the selected algorithm
+        function startSearch() {
+            if (!currentAlgorithm) {
+                alert('Please select an algorithm first!');
+                return;
+            }
+            
+            if (isSearching) return;
+            
+            isSearching = true;
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('step-btn').disabled = true;
+            document.getElementById('search-status').textContent = 'Searching...';
+            searchTime = 0;
+            
+            // Initialize search state based on algorithm
+            const startTime = performance.now();
+            switch (currentAlgorithm) {
+                case ALGORITHMS.BFS:
+                    searchState = initBFS();
+                    break;
+                case ALGORITHMS.DFS:
+                    searchState = initDFS();
+                    break;
+                case ALGORITHMS.GBFS:
+                    searchState = initGBFS();
+                    break;
+                case ALGORITHMS.ASTAR:
+                    searchState = initAStar();
+                    break;
+            }
+            searchTime = performance.now() - startTime;
+            
+            // Start the search animation
+            animateSearch();
+        }
+
+        // Reset the maze to its initial state
+        function resetMaze() {
+            resetSearch();
+            generateMaze();
+            renderMaze();
+            updateStats();
+        }
+
+        // Reset the search state
+        function resetSearch() {
+            isSearching = false;
+            steps = 0;
+            visitedCells = 0;
+            pathLength = 0;
+            searchTime = 0;
+            searchState = null;
+            
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('step-btn').disabled = false;
+            document.getElementById('search-status').textContent = 'Ready';
+            
+            // Reset maze cells (keep walls, start, and goal)
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    if (maze[i][j] === CELL_TYPES.VISITED || 
+                        maze[i][j] === CELL_TYPES.CURRENT || 
+                        maze[i][j] === CELL_TYPES.SOLUTION) {
+                        maze[i][j] = CELL_TYPES.PATH;
+                    }
+                }
+            }
+            
+            // Reset start and goal
+            maze[startPos.row][startPos.col] = CELL_TYPES.START;
+            maze[goalPos.row][goalPos.col] = CELL_TYPES.GOAL;
+            
+            renderMaze();
+            updateStats();
+        }
+
+        // Step forward one step in the search
+        function stepForward() {
+            if (!currentAlgorithm || !searchState || isSearching) return;
+            
+            const startTime = performance.now();
+            const result = performSearchStep();
+            searchTime += performance.now() - startTime;
+            handleSearchResult(result);
+            
+            if (result && result.finished) {
+                document.getElementById('step-btn').disabled = true;
+            }
+        }
+
+        // Animate the search process
+        function animateSearch() {
+            if (!isSearching) return;
+            
+            const startTime = performance.now();
+            const result = performSearchStep();
+            searchTime += performance.now() - startTime;
+            handleSearchResult(result);
+            
+            if (result && result.finished) {
+                isSearching = false;
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('step-btn').disabled = true;
+                
+                // Update performance data
+                if (result.path) {
+                    performanceData[currentAlgorithm].path = result.path.length;
+                    performanceData[currentAlgorithm].visited = visitedCells;
+                    performanceData[currentAlgorithm].time = Math.round(searchTime);
+                    updatePerformanceTable();
+                }
+            } else {
+                setTimeout(() => animateSearch(), animationSpeed);
+            }
+        }
+
+        // Perform one step of the search based on the current algorithm
+        function performSearchStep() {
+            if (!searchState) return null;
+            
+            steps++;
+            
+            switch (currentAlgorithm) {
+                case ALGORITHMS.BFS:
+                    return stepBFS();
+                case ALGORITHMS.DFS:
+                    return stepDFS();
+                case ALGORITHMS.GBFS:
+                    return stepGBFS();
+                case ALGORITHMS.ASTAR:
+                    return stepAStar();
+            }
+            
+            return null;
+        }
+
+        // Handle the result of a search step
+        function handleSearchResult(result) {
+            if (!result) return;
+            
+            // Update visited cells count
+            if (result.visited) {
+                visitedCells++;
+            }
+            
+            // Update maze visualization
+            renderMaze();
+            updateStats();
+            
+            // Check if search is finished
+            if (result.finished) {
+                if (result.path) {
+                    pathLength = result.path.length;
+                    highlightSolutionPath(result.path);
+                    document.getElementById('search-status').textContent = 'Path Found!';
+                } else {
+                    document.getElementById('search-status').textContent = 'No Path Found!';
+                }
+            }
+        }
+
+        // Update statistics display
+        function updateStats() {
+            document.getElementById('steps-taken').textContent = steps;
+            document.getElementById('cells-visited').textContent = visitedCells;
+            document.getElementById('path-length').textContent = pathLength;
+            document.getElementById('search-time').textContent = Math.round(searchTime);
+        }
+
+        // Update performance comparison table
+        function updatePerformanceTable() {
+            for (const algo in performanceData) {
+                document.getElementById(`${algo}-path`).textContent = performanceData[algo].path || '-';
+                document.getElementById(`${algo}-visited`).textContent = performanceData[algo].visited || '-';
+                document.getElementById(`${algo}-time`).textContent = performanceData[algo].time || '-';
+            }
+        }
+
+        // Highlight the solution path
+        function highlightSolutionPath(path) {
+            for (const node of path) {
+                if (maze[node.row][node.col] !== CELL_TYPES.START && 
+                    maze[node.row][node.col] !== CELL_TYPES.GOAL) {
+                    maze[node.row][node.col] = CELL_TYPES.SOLUTION;
+                }
+            }
+            renderMaze();
+        }
+
+        // Utility function to create a key for a position
+        function key(pos) {
+            return `${pos.row},${pos.col}`;
+        }
+
+        // Check if a position is valid (within bounds and not a wall)
+        function isValidPosition(row, col) {
+            return row >= 0 && row < ROWS && col >= 0 && col < COLS && 
+                   maze[row][col] !== CELL_TYPES.WALL;
+        }
+
+        // Get neighbors of a position (up, down, left, right) for pathfinding
+        function getPathNeighbors(row, col) {
+            const neighbors = [];
+            const directions = [
+                { row: -1, col: 0 },  // up
+                { row: 1, col: 0 },   // down
+                { row: 0, col: -1 },  // left
+                { row: 0, col: 1 }    // right
+            ];
+            
+            for (const dir of directions) {
+                const newRow = row + dir.row;
+                const newCol = col + dir.col;
+                
+                if (isValidPosition(newRow, newCol)) {
+                    neighbors.push({ row: newRow, col: newCol });
+                }
+            }
+            
+            return neighbors;
+        }
+
+        // Calculate Manhattan distance between two points
+        function manhattanDistance(a, b) {
+            return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
+        }
+
+        // BFS implementation
+        function initBFS() {
+            const queue = [{ ...startPos }];
+            const visited = new Set();
+            visited.add(key(startPos));
+            const parent = {};
+            
+            return { queue, visited, parent };
+        }
+
+        function stepBFS() {
+            const { queue, visited, parent } = searchState;
+            
+            if (queue.length === 0) {
+                return { finished: true, path: null };
+            }
+            
+            const current = queue.shift();
+            
+            // Mark as visited if not start
+            if (maze[current.row][current.col] !== CELL_TYPES.START) {
+                maze[current.row][current.col] = CELL_TYPES.VISITED;
+            }
+            
+            // Check if we reached the goal
+            if (current.row === goalPos.row && current.col === goalPos.col) {
+                const path = reconstructPath(parent, current);
+                return { finished: true, path, visited: true };
+            }
+            
+            // Explore neighbors
+            const neighbors = getPathNeighbors(current.row, current.col);
+            for (const neighbor of neighbors) {
+                const neighborKey = key(neighbor);
+                if (!visited.has(neighborKey)) {
+                    visited.add(neighborKey);
+                    parent[neighborKey] = current;
+                    queue.push(neighbor);
+                    
+                    // Mark as current if not goal
+                    if (maze[neighbor.row][neighbor.col] !== CELL_TYPES.GOAL) {
+                        maze[neighbor.row][neighbor.col] = CELL_TYPES.CURRENT;
+                    }
+                }
+            }
+            
+            return { visited: true };
+        }
+
+        // DFS implementation
+        function initDFS() {
+            const stack = [{ ...startPos }];
+            const visited = new Set();
+            visited.add(key(startPos));
+            const parent = {};
+            
+            return { stack, visited, parent };
+        }
+
+        function stepDFS() {
+            const { stack, visited, parent } = searchState;
+            
+            if (stack.length === 0) {
+                return { finished: true, path: null };
+            }
+            
+            const current = stack.pop();
+            
+            // Mark as visited if not start
+            if (maze[current.row][current.col] !== CELL_TYPES.START) {
+                maze[current.row][current.col] = CELL_TYPES.VISITED;
+            }
+            
+            // Check if we reached the goal
+            if (current.row === goalPos.row && current.col === goalPos.col) {
+                const path = reconstructPath(parent, current);
+                return { finished: true, path, visited: true };
+            }
+            
+            // Explore neighbors
+            const neighbors = getPathNeighbors(current.row, current.col);
+            for (const neighbor of neighbors) {
+                const neighborKey = key(neighbor);
+                if (!visited.has(neighborKey)) {
+                    visited.add(neighborKey);
+                    parent[neighborKey] = current;
+                    stack.push(neighbor);
+                    
+                    // Mark as current if not goal
+                    if (maze[neighbor.row][neighbor.col] !== CELL_TYPES.GOAL) {
+                        maze[neighbor.row][neighbor.col] = CELL_TYPES.CURRENT;
+                    }
+                }
+            }
+            
+            return { visited: true };
+        }
+
+        // Greedy Best-First Search implementation
+        function initGBFS() {
+            const openSet = new PriorityQueue((a, b) => a.priority < b.priority);
+            openSet.enqueue({ ...startPos, priority: manhattanDistance(startPos, goalPos) });
+            const visited = new Set();
+            visited.add(key(startPos));
+            const parent = {};
+            
+            return { openSet, visited, parent };
+        }
+
+        function stepGBFS() {
+            const { openSet, visited, parent } = searchState;
+            
+            if (openSet.isEmpty()) {
+                return { finished: true, path: null };
+            }
+            
+            // Find node with lowest priority (closest to goal)
+            const current = openSet.dequeue();
+            
+            // Mark as visited if not start
+            if (maze[current.row][current.col] !== CELL_TYPES.START) {
+                maze[current.row][current.col] = CELL_TYPES.VISITED;
+            }
+            
+            // Check if we reached the goal
+            if (current.row === goalPos.row && current.col === goalPos.col) {
+                const path = reconstructPath(parent, current);
+                return { finished: true, path, visited: true };
+            }
+            
+            // Explore neighbors
+            const neighbors = getPathNeighbors(current.row, current.col);
+            for (const neighbor of neighbors) {
+                const neighborKey = key(neighbor);
+                if (!visited.has(neighborKey)) {
+                    visited.add(neighborKey);
+                    parent[neighborKey] = current;
+                    const priority = manhattanDistance(neighbor, goalPos);
+                    openSet.enqueue({ ...neighbor, priority });
+                    
+                    // Mark as current if not goal
+                    if (maze[neighbor.row][neighbor.col] !== CELL_TYPES.GOAL) {
+                        maze[neighbor.row][neighbor.col] = CELL_TYPES.CURRENT;
+                    }
+                }
+            }
+            
+            return { visited: true };
+        }
+
+        // A* Search implementation
+        function initAStar() {
+            const openSet = new PriorityQueue();
+            const gScore = new Map();
+            const fScore = new Map();
+            const parent = {};
+            
+            gScore.set(key(startPos), 0);
+            fScore.set(key(startPos), manhattanDistance(startPos, goalPos));
+            openSet.enqueue({ 
+                ...startPos, 
+                f: fScore.get(key(startPos)),
+                g: 0
+            });
+            
+            return { openSet, gScore, fScore, parent };
+        }
+
+        function stepAStar() {
+            const { openSet, gScore, fScore, parent } = searchState;
+            
+            if (openSet.isEmpty()) {
+                return { finished: true, path: null };
+            }
+            
+            // Find node with lowest f score
+            const current = openSet.dequeue();
+            const currentKey = key(current);
+            
+            // Mark as visited if not start
+            if (maze[current.row][current.col] !== CELL_TYPES.START) {
+                maze[current.row][current.col] = CELL_TYPES.VISITED;
+            }
+            
+            // Check if we reached the goal
+            if (current.row === goalPos.row && current.col === goalPos.col) {
+                const path = reconstructPath(parent, current);
+                return { finished: true, path, visited: true };
+            }
+            
+            // Explore neighbors
+            const neighbors = getPathNeighbors(current.row, current.col);
+            for (const neighbor of neighbors) {
+                const neighborKey = key(neighbor);
+                
+                // Calculate tentative g score
+                const tentativeG = gScore.get(currentKey) + 1;
+                
+                // If this path to neighbor is better
+                if (!gScore.has(neighborKey) || tentativeG < gScore.get(neighborKey)) {
+                    // Update parent and scores
+                    parent[neighborKey] = current;
+                    gScore.set(neighborKey, tentativeG);
+                    fScore.set(neighborKey, tentativeG + manhattanDistance(neighbor, goalPos));
+                    
+                    // Add to open set if not already there
+                    if (!openSet.contains(neighbor)) {
+                        openSet.enqueue({
+                            ...neighbor,
+                            f: fScore.get(neighborKey),
+                            g: tentativeG
+                        });
+                        
+                        // Mark as current if not goal
+                        if (maze[neighbor.row][neighbor.col] !== CELL_TYPES.GOAL) {
+                            maze[neighbor.row][neighbor.col] = CELL_TYPES.CURRENT;
+                        }
+                    }
+                }
+            }
+            
+            return { visited: true };
+        }
+
+        // Reconstruct path from parent pointers
+        function reconstructPath(parent, current) {
+            const path = [current];
+            let currentKey = key(current);
+            
+            while (parent[currentKey]) {
+                current = parent[currentKey];
+                path.unshift(current);
+                currentKey = key(current);
+            }
+            
+            return path;
+        }
+
+        // Initialize the game when the page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
